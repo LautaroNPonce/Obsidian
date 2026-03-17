@@ -6,7 +6,7 @@ Gestor de contraseñas seguro, privado y completamente offline, desarrollado con
 
 ## <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/shield-lock.svg" width="20"/> Descripción general
 
-OBSIDIAN es una solución de gestión de credenciales diseñada para operar como una aplicación nativa en cualquier dispositivo — móvil o escritorio sin depender de servidores externos ni modelos de suscripción.
+OBSIDIAN es una solución de gestión de credenciales diseñada para operar como una aplicación nativa en cualquier dispositivo móvil o escritorio sin depender de servidores externos ni modelos de suscripción.
 
 Toda la información se cifra localmente utilizando **AES-256-GCM**, el mismo estándar utilizado por entidades financieras y organismos gubernamentales.  
 La contraseña maestra nunca se almacena ni se transmite: solo existe en la memoria del usuario, garantizando un modelo de seguridad de conocimiento cero.
@@ -108,7 +108,7 @@ La contraseña maestra nunca se almacena ni se transmite: solo existe en la memo
 
 ## <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/person.svg" width="20"/> Autor
 
-Desarrollado por Lautaro Ponce
+Desarrollado por Lautaro N Ponce
 
 ---
 

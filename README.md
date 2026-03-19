@@ -102,7 +102,7 @@ La contraseña maestra nunca se almacena ni se transmite: solo existe en la memo
 
 ## <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/globe.svg" width="20"/> Demo
 
-👉 [https://obsidianlpn.netlify.app]
+👉 [https://obsidianlpn.netlify.app](https://obsidiansecure.netlify.app/)
 
 ---
 

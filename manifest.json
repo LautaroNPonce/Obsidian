@@ -1,0 +1,20 @@
+{
+  "name": "OBSIDIAN Password Manager",
+  "short_name": "OBSIDIAN",
+  "description": "Gestor de contraseñas seguro con cifrado AES-256-GCM",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#09090f",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

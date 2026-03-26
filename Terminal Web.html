@@ -1,0 +1,1934 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBSIDIAN — Password Manager</title>
+  <meta name="description" content="AES-256-GCM encrypted password manager. Zero knowledge. 100% offline.">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --bg: #09090f;
+      --bg2: #12131d;
+      --bg3: #1a1b28;
+      --border: rgba(99, 102, 241, 0.12);
+      --border2: rgba(99, 102, 241, 0.28);
+      --green: #6366f1;
+      --green2: #4f52d4;
+      --green-dim: rgba(99, 102, 241, 0.07);
+      --cyan: #8b5cf6;
+      --red: #ef4444;
+      --amber: #f59e0b;
+      --text: #e2e4f0;
+      --text2: #6b6e9a;
+      --muted: #2a2b45;
+      --font: 'JetBrains Mono', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ── SCANLINES ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          rgba(99, 102, 241, 0.015) 2px,
+          rgba(99, 102, 241, 0.015) 4px);
+      pointer-events: none;
+    }
+
+    /* ── GRID OVERLAY ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-image:
+        linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 9, 15, 0.92);
+      backdrop-filter: blur(8px);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .nav-prompt {
+      color: var(--green);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-prompt::before {
+      content: '> ';
+      color: var(--text2);
+    }
+
+    .nav-logo-text {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--green);
+    }
+
+    .nav-version {
+      font-size: 10px;
+      color: var(--text2);
+      margin-left: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
+    .nav-link {
+      color: var(--text2);
+      font-size: 11px;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      padding: 0 18px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      border-left: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .nav-link:hover {
+      color: var(--green);
+      background: var(--green-dim);
+    }
+
+    .nav-link-cta {
+      color: #fff;
+      background: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: 0.1em;
+      padding: 0 20px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .nav-link-cta:hover {
+      background: var(--green2);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      padding-top: 52px;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      position: relative;
+      z-index: 1;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-left {
+      padding: 60px 48px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .hero-sys-header {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.12em;
+      margin-bottom: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .hero-sys-header span {
+      display: block;
+    }
+
+    .hero-sys-header .ok {
+      color: var(--green);
+    }
+
+    .hero-title-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-title {
+      font-size: clamp(56px, 9vw, 120px);
+      font-weight: 700;
+      line-height: 0.9;
+      letter-spacing: -0.02em;
+      color: var(--green);
+      text-shadow: 0 0 40px rgba(99, 102, 241, 0.35);
+      position: relative;
+    }
+
+    .hero-title::after {
+      content: '█';
+      font-size: 0.4em;
+      animation: blink 1s step-end infinite;
+      color: var(--green);
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0
+      }
+    }
+
+    .hero-subtitle {
+      font-size: 13px;
+      color: var(--text2);
+      letter-spacing: 0.08em;
+      margin-top: 16px;
+    }
+
+    .hero-subtitle::before {
+      content: '// ';
+      color: var(--muted);
+    }
+
+    .hero-right {
+      padding: 60px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .terminal-block {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+    }
+
+    .terminal-header {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .terminal-header i {
+      color: var(--green);
+      font-size: 9px;
+    }
+
+    .terminal-body {
+      padding: 16px 14px;
+    }
+
+    .t-line {
+      font-size: 12px;
+      line-height: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .t-line .prompt {
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .t-line .cmd {
+      color: var(--cyan);
+    }
+
+    .t-line .ok {
+      color: var(--green);
+    }
+
+    .t-line .val {
+      color: var(--text);
+    }
+
+    .t-line .dim {
+      color: var(--text2);
+      font-size: 11px;
+    }
+
+    .t-line .err {
+      color: var(--red);
+    }
+
+    .t-line .warn {
+      color: var(--amber);
+    }
+
+    .cipher-scroll {
+      font-size: 10px;
+      color: var(--text2);
+      line-height: 1.8;
+      word-break: break-all;
+      max-height: 80px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .cipher-scroll::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: linear-gradient(transparent, var(--bg2));
+    }
+
+    .hero-cta {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-terminal {
+      background: var(--green);
+      border: none;
+      padding: 13px 20px;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .btn-terminal:hover {
+      background: var(--green2);
+    }
+
+    .btn-terminal::before {
+      content: '$ ';
+      opacity: 0.5;
+    }
+
+    .btn-secondary-t {
+      background: transparent;
+      border: 1px solid var(--border2);
+      padding: 11px 20px;
+      color: var(--text2);
+      font-family: var(--font);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary-t:hover {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-dim);
+    }
+
+    .btn-secondary-t::before {
+      content: '> ';
+      opacity: 0.4;
+    }
+
+    /* HERO STATS BAR */
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .hstat {
+      padding: 20px 32px;
+      border-right: 1px solid var(--border);
+    }
+
+    .hstat:last-child {
+      border-right: none;
+    }
+
+    .hstat-key {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+
+    .hstat-key::before {
+      content: '> ';
+      color: var(--muted);
+    }
+
+    .hstat-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .hstat-bar {
+      margin-top: 8px;
+      height: 2px;
+      background: var(--muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hstat-bar-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: var(--green);
+      animation: barLoad 2s ease forwards;
+    }
+
+    @keyframes barLoad {
+      from {
+        width: 0
+      }
+    }
+
+    /* ── MARQUEE ── */
+    .marquee-wrap {
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+      padding: 12px 0;
+      background: var(--bg2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .marquee-track {
+      display: flex;
+      animation: marquee 20s linear infinite;
+      width: max-content;
+    }
+
+    .marquee-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 32px;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      color: var(--text2);
+      white-space: nowrap;
+    }
+
+    .marquee-item i {
+      color: var(--green);
+      font-size: 9px;
+    }
+
+    .marquee-sep {
+      color: var(--muted);
+    }
+
+    @keyframes marquee {
+      from {
+        transform: translateX(0)
+      }
+
+      to {
+        transform: translateX(-50%)
+      }
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      position: relative;
+      z-index: 1;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sec-header {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sec-header-num {
+      padding: 32px 40px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sec-num {
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .sec-module {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.12em;
+      margin-top: 8px;
+    }
+
+    .sec-module::before {
+      content: 'MODULE.';
+      color: var(--muted);
+    }
+
+    .sec-header-content {
+      padding: 32px 48px;
+    }
+
+    .sec-label {
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sec-label::before {
+      content: '//';
+      color: var(--muted);
+    }
+
+    .sec-title {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .sec-title span {
+      color: var(--green);
+    }
+
+    .sec-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 500px;
+    }
+
+    /* ── FEATURES ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .feat {
+      padding: 36px 40px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .feat:nth-child(3n) {
+      border-right: none;
+    }
+
+    .feat:nth-child(n+4) {
+      border-bottom: none;
+    }
+
+    .feat:hover {
+      background: var(--green-dim);
+    }
+
+    .feat-index {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feat-index i {
+      color: var(--green);
+      font-size: 10px;
+    }
+
+    .feat-status {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      border: 1px solid var(--border2);
+      color: var(--green);
+      margin-left: auto;
+    }
+
+    .feat-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .feat-desc {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.7;
+    }
+
+    .feat-meta {
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .feat-meta i {
+      color: var(--green);
+    }
+
+    /* ── SECURITY ── */
+    .security-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .sec-left {
+      padding: 48px;
+      border-right: 1px solid var(--border);
+    }
+
+    .sec-right {
+      padding: 48px;
+    }
+
+    .sec-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .sec-row {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .sec-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .sec-row-key {
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding-top: 2px;
+    }
+
+    .sec-row-key::before {
+      content: '>';
+      color: var(--text2);
+      flex-shrink: 0;
+    }
+
+    .sec-row-val {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    .sec-row-val strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .cipher-panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .cipher-title {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.12em;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cipher-title i {
+      color: var(--amber);
+    }
+
+    .cipher-data {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.9;
+      word-break: break-all;
+    }
+
+    .cipher-data .hl {
+      color: var(--cyan);
+    }
+
+    .verified-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10px;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .progress-item {
+      margin-bottom: 16px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .progress-label span:last-child {
+      color: var(--green);
+    }
+
+    .progress-bar {
+      height: 2px;
+      background: var(--muted);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: var(--green);
+      animation: barLoad 2s ease forwards;
+    }
+
+    /* ── INSTALL ── */
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .install-col {
+      padding: 48px;
+      border-right: 1px solid var(--border);
+    }
+
+    .install-col:last-child {
+      border-right: none;
+    }
+
+    .platform-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .platform-badge i {
+      font-size: 20px;
+    }
+
+    .platform-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .platform-info {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 2px;
+      letter-spacing: 0.06em;
+    }
+
+    .cmd-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .cmd-step {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0;
+    }
+
+    .cmd-step:last-child {
+      border-bottom: none;
+    }
+
+    .cmd-step-n {
+      width: 32px;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--muted);
+      padding-top: 2px;
+    }
+
+    .cmd-step-body {
+      flex: 1;
+    }
+
+    .cmd-step-cmd {
+      font-size: 12px;
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+
+    .cmd-step-cmd::before {
+      content: '$ ';
+      color: var(--text2);
+    }
+
+    .cmd-step-out {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .cmd-step-out strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ── TESTIMONIALS ── */
+    .tgrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .tcard {
+      padding: 40px;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .tcard:last-child {
+      border-right: none;
+    }
+
+    .tcard:hover {
+      background: var(--green-dim);
+    }
+
+    .tcard-meta {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tcard-meta i {
+      color: var(--green);
+    }
+
+    .tcard-rating {
+      display: flex;
+      gap: 3px;
+      color: var(--green);
+      font-size: 11px;
+      margin-bottom: 16px;
+    }
+
+    .tcard-quote {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.65;
+      margin-bottom: 24px;
+    }
+
+    .tcard-quote::before {
+      content: '"';
+      color: var(--text2);
+    }
+
+    .tcard-quote::after {
+      content: '"';
+      color: var(--text2);
+    }
+
+    .tcard-author {
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    .tcard-author-name {
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .tcard-author-role {
+      color: var(--text2);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── CTA ── */
+    .cta-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .cta-left {
+      padding: 80px 48px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .cta-sys {
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.1em;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cta-sys span {
+      display: block;
+    }
+
+    .cta-sys .ok {
+      color: var(--green);
+    }
+
+    .cta-sys .blink::after {
+      content: '█';
+      animation: blink 1s step-end infinite;
+    }
+
+    .cta-title {
+      font-size: clamp(36px, 5vw, 60px);
+      font-weight: 700;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .cta-title span {
+      color: var(--green);
+    }
+
+    .cta-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 380px;
+      margin-bottom: 12px;
+    }
+
+    .cta-note {
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.06em;
+    }
+
+    .cta-note i {
+      color: var(--green);
+    }
+
+    .cta-right {
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .cta-item {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 20px;
+      align-items: center;
+      transition: background 0.2s;
+      cursor: default;
+    }
+
+    .cta-item:last-child {
+      border-bottom: none;
+    }
+
+    .cta-item:hover {
+      background: var(--green-dim);
+      padding-left: 8px;
+    }
+
+    .cta-item-key {
+      font-size: 11px;
+      color: var(--green);
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cta-item-key i {
+      font-size: 11px;
+    }
+
+    .cta-item-val {
+      font-size: 12px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .cta-item-val strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr auto;
+      border-top: none;
+    }
+
+    .footer-brand {
+      padding: 32px 40px;
+      border-right: 1px solid var(--border);
+    }
+
+    .footer-logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green);
+      letter-spacing: 0.14em;
+      margin-bottom: 8px;
+    }
+
+    .footer-logo::before {
+      content: '> ';
+      color: var(--text2);
+    }
+
+    .footer-tagline {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.6;
+    }
+
+    .footer-links {
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      border-right: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      font-size: 11px;
+      color: var(--text2);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--green);
+    }
+
+    .footer-links a::before {
+      content: './';
+      color: var(--muted);
+    }
+
+    .footer-sys {
+      padding: 32px 40px;
+      font-size: 10px;
+      color: var(--text2);
+      letter-spacing: 0.08em;
+      line-height: 1.8;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .footer-sys span {
+      display: block;
+    }
+
+    .footer-sys .ok {
+      color: var(--green);
+    }
+
+    /* ── GLITCH ── */
+    .glitch {
+      position: relative;
+    }
+
+    .glitch:hover::before,
+    .glitch:hover::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: var(--green);
+    }
+
+    .glitch:hover::before {
+      animation: glitch1 0.3s infinite;
+      clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%);
+      color: var(--cyan);
+    }
+
+    .glitch:hover::after {
+      animation: glitch2 0.3s infinite;
+      clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+      color: var(--red);
+    }
+
+    @keyframes glitch1 {
+      0% {
+        transform: translateX(2px)
+      }
+
+      50% {
+        transform: translateX(-2px)
+      }
+
+      100% {
+        transform: translateX(2px)
+      }
+    }
+
+    @keyframes glitch2 {
+      0% {
+        transform: translateX(-2px)
+      }
+
+      50% {
+        transform: translateX(2px)
+      }
+
+      100% {
+        transform: translateX(-2px)
+      }
+    }
+
+    /* ── REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .d1 {
+      transition-delay: 0.1s
+    }
+
+    .d2 {
+      transition-delay: 0.2s
+    }
+
+    .d3 {
+      transition-delay: 0.3s
+    }
+
+    .d4 {
+      transition-delay: 0.4s
+    }
+
+    .d5 {
+      transition-delay: 0.5s
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px) {
+      nav {
+        padding: 0 20px;
+      }
+
+      .nav-link {
+        display: none;
+      }
+
+      .hero-main {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-left {
+        border-right: none;
+        padding: 40px 24px;
+      }
+
+      .hero-right {
+        padding: 24px;
+      }
+
+      .hero-stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hstat {
+        padding: 16px 24px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .feat {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .feat:nth-child(n) {
+        border-right: none;
+      }
+
+      .security-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .sec-left {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 32px 24px;
+      }
+
+      .sec-right {
+        padding: 32px 24px;
+      }
+
+      .install-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .install-col {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 32px 24px;
+      }
+
+      .install-col:last-child {
+        border-bottom: none;
+      }
+
+      .tgrid {
+        grid-template-columns: 1fr;
+      }
+
+      .tcard {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 32px 24px;
+      }
+
+      .tcard:last-child {
+        border-bottom: none;
+      }
+
+      .cta-wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-left {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 48px 24px;
+      }
+
+      .cta-right {
+        padding: 32px 24px;
+      }
+
+      .sec-header {
+        grid-template-columns: 1fr;
+      }
+
+      .sec-header-num {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+      }
+
+      .sec-header-content {
+        padding: 24px;
+      }
+
+      footer {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-brand {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+      }
+
+      .footer-links {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+      }
+
+      .footer-sys {
+        padding: 24px;
+      }
+
+      .sec-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-left">
+      <div class="nav-prompt">
+        <i class="bi bi-shield-lock-fill" style="color:var(--green);font-size:13px"></i>
+        <span class="nav-logo-text">OBSIDIAN</span>
+        <span class="nav-version">v2.0.0 · stable</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <a href="#features" class="nav-link">features</a>
+      <a href="#security" class="nav-link">security</a>
+      <a href="#install" class="nav-link">install</a>
+      <a href="https://obsidiansecure.netlify.app/" class="nav-link-cta">
+        <i class="bi bi-terminal"></i> Acceder
+      </a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-main">
+      <div class="hero-left">
+        <div class="hero-sys-header">
+          <span>OBSIDIAN PASSWORD MANAGER v2.0.0</span>
+          <span>Iniciando módulos de seguridad...</span>
+          <span class="ok">[✓] AES-256-GCM .................. ACTIVO</span>
+          <span class="ok">[✓] PBKDF2 x310000 .............. ACTIVO</span>
+          <span class="ok">[✓] Zero Knowledge .............. ACTIVO</span>
+          <span class="ok">[✓] Offline Mode ................ ACTIVO</span>
+        </div>
+        <div class="hero-title-wrap">
+          <h1 class="hero-title glitch" data-text="OBSIDIAN">OBSIDIAN</h1>
+          <p class="hero-subtitle">password manager · zero knowledge · aes-256</p>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <i class="bi bi-circle-fill"></i> vault.status
+          </div>
+          <div class="terminal-body">
+            <div class="t-line"><span class="prompt">$</span><span class="cmd">obsidian --status</span></div>
+            <div class="t-line"><span class="ok">[✓]</span><span class="val">Vault cifrado</span><span class="dim">·
+                AES-256-GCM</span></div>
+            <div class="t-line"><span class="ok">[✓]</span><span class="val">Sin conexión activa</span><span
+                class="dim">· 100% offline</span></div>
+            <div class="t-line"><span class="ok">[✓]</span><span class="val">Clave derivada</span><span class="dim">·
+                PBKDF2 x310000</span></div>
+            <div class="t-line"><span class="ok">[✓]</span><span class="val">Auto-lock</span><span class="dim">· 5 min
+                inactivity</span></div>
+            <div class="t-line"><span class="warn">[!]</span><span class="val">2 alertas de seguridad</span><span
+                class="dim">· ver detalles</span></div>
+          </div>
+        </div>
+        <div class="terminal-block">
+          <div class="terminal-header">
+            <i class="bi bi-circle-fill"></i> vault.enc · fragmento
+          </div>
+          <div class="terminal-body">
+            <div class="cipher-scroll" id="cipher">
+              a8F3kXp9mNqL7vR+eS1oT5wY2uBzJhKdCiAr6E0n4GsWf8MQj1tVlIyHPxZOgDcUbNe3Rk7mFw5Xt9sLqBzJhKd
+              eCiAr6E0n4GsWf8MQj1tVlIyHPxZOgDcUbNe3Rk7mFw5aB3cD8eF2gH7iJ1kL6mN0oP4qR9sT5uV2wX8yZ4aB1cD6eF3gH8iJ2kL7mN1oP5qR0sT6uV3wX9yZ5
+            </div>
+          </div>
+        </div>
+        <div class="hero-cta">
+          <a href="https://obsidiansecure.netlify.app/" class="btn-terminal">
+            <span>obsidian --open</span>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+          <a href="#features" class="btn-secondary-t">
+            <span>list --features</span>
+            <i class="bi bi-arrow-down"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat">
+        <div class="hstat-key">encryption</div>
+        <div class="hstat-val">AES-256</div>
+        <div class="hstat-bar">
+          <div class="hstat-bar-fill" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-key">kdf_iterations</div>
+        <div class="hstat-val">310,000</div>
+        <div class="hstat-bar">
+          <div class="hstat-bar-fill" style="width:97%"></div>
+        </div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-key">server_requests</div>
+        <div class="hstat-val">0 bytes</div>
+        <div class="hstat-bar">
+          <div class="hstat-bar-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-key">offline_capable</div>
+        <div class="hstat-val">100%</div>
+        <div class="hstat-bar">
+          <div class="hstat-bar-fill" style="width:100%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      <div class="marquee-item"><i class="bi bi-check-circle-fill"></i> AES-256-GCM<span class="marquee-sep"> ·</span>
+      </div>
+      <div class="marquee-item"><i class="bi bi-lock-fill"></i> ZERO_KNOWLEDGE<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-phone"></i> PWA_INSTALLABLE<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-wifi-off"></i> OFFLINE_FIRST<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-collection"></i> MULTI_VAULT<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-exclamation-triangle"></i> SMART_ALERTS<span class="marquee-sep">
+          ·</span></div>
+      <div class="marquee-item"><i class="bi bi-clock-history"></i> PASS_HISTORY<span class="marquee-sep"> ·</span>
+      </div>
+      <div class="marquee-item"><i class="bi bi-lightning-charge-fill"></i> PASS_GENERATOR<span class="marquee-sep">
+          ·</span></div>
+      <div class="marquee-item"><i class="bi bi-check-circle-fill"></i> AES-256-GCM<span class="marquee-sep"> ·</span>
+      </div>
+      <div class="marquee-item"><i class="bi bi-lock-fill"></i> ZERO_KNOWLEDGE<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-phone"></i> PWA_INSTALLABLE<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-wifi-off"></i> OFFLINE_FIRST<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-collection"></i> MULTI_VAULT<span class="marquee-sep"> ·</span></div>
+      <div class="marquee-item"><i class="bi bi-exclamation-triangle"></i> SMART_ALERTS<span class="marquee-sep">
+          ·</span></div>
+      <div class="marquee-item"><i class="bi bi-clock-history"></i> PASS_HISTORY<span class="marquee-sep"> ·</span>
+      </div>
+      <div class="marquee-item"><i class="bi bi-lightning-charge-fill"></i> PASS_GENERATOR<span class="marquee-sep">
+          ·</span></div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="sec-header">
+      <div class="sec-header-num reveal">
+        <div class="sec-num">01</div>
+        <div class="sec-module">FEATURES</div>
+      </div>
+      <div class="sec-header-content reveal d1">
+        <div class="sec-label">system.features</div>
+        <h2 class="sec-title">Todo lo que<br>necesitás.<br><span>Nada más.</span></h2>
+        <p class="sec-desc">Diseñado para ser simple de usar e imposible de vulnerar. Sin funciones innecesarias. Sin
+          compromisos en la seguridad.</p>
+      </div>
+    </div>
+    <div class="features-grid">
+      <div class="feat reveal">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_001 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Múltiples vaults</div>
+        <div class="feat-desc">Separación completa entre Personal, Trabajo y Banco. Cada vault cifrado de forma
+          independiente con su propia derivación de clave.</div>
+        <div class="feat-meta"><i class="bi bi-shield-lock"></i> Cifrado independiente por vault</div>
+      </div>
+      <div class="feat reveal d1">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_002 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Editar con historial</div>
+        <div class="feat-desc">Modificá cualquier entrada sin pérdida de datos. Historial automático de las últimas 10
+          contraseñas anteriores con timestamp exacto.</div>
+        <div class="feat-meta"><i class="bi bi-clock-history"></i> Últimas 10 versiones guardadas</div>
+      </div>
+      <div class="feat reveal d2">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_003 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Alertas inteligentes</div>
+        <div class="feat-desc">Detección automática de contraseñas reutilizadas entre sitios y contraseñas con más de 90
+          días sin rotación. Auditoría en tiempo real.</div>
+        <div class="feat-meta"><i class="bi bi-exclamation-triangle"></i> Detección en tiempo real</div>
+      </div>
+      <div class="feat reveal d1">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_004 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Generador seguro</div>
+        <div class="feat-desc">Generación criptográfica de contraseñas de hasta 64 caracteres. 7 niveles de fortaleza.
+          Mayúsculas, minúsculas, números, símbolos.</div>
+        <div class="feat-meta"><i class="bi bi-lightning-charge-fill"></i> Hasta 64 caracteres</div>
+      </div>
+      <div class="feat reveal d2">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_005 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Log de actividad</div>
+        <div class="feat-desc">Registro completo de cada operación con timestamp. Accesos, copias, ediciones, bloqueos.
+          Auditoría total de tu vault.</div>
+        <div class="feat-meta"><i class="bi bi-journal-text"></i> Auditoría completa</div>
+      </div>
+      <div class="feat reveal d3">
+        <div class="feat-index"><i class="bi bi-check-circle-fill"></i> feat_006 <span class="feat-status">ACTIVE</span>
+        </div>
+        <div class="feat-name">Backup cifrado</div>
+        <div class="feat-desc">Exportación de todos los vaults como archivo .vault cifrado. Importación verificada por
+          contraseña maestra. Cero pérdida de datos.</div>
+        <div class="feat-meta"><i class="bi bi-floppy-fill"></i> Archivo .vault portátil</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECURITY -->
+  <section id="security">
+    <div class="sec-header">
+      <div class="sec-header-num reveal">
+        <div class="sec-num">02</div>
+        <div class="sec-module">SECURITY</div>
+      </div>
+      <div class="sec-header-content reveal d1">
+        <div class="sec-label">system.security</div>
+        <h2 class="sec-title">Irrompible<br><span>por diseño.</span></h2>
+        <p class="sec-desc">El cifrado ocurre en tu dispositivo antes de que cualquier dato se mueva. Sin excepciones.
+          Sin backdoors.</p>
+      </div>
+    </div>
+    <div class="security-grid">
+      <div class="sec-left reveal">
+        <div class="cipher-panel">
+          <div class="cipher-title"><i class="bi bi-exclamation-triangle"></i> VAULT.ENC · OUTPUT CIFRADO</div>
+          <div class="cipher-data">
+            <span class="hl">vlt_enc_v6:</span> "a8F3kXp9mNqL7vR+<br>
+            eS1oT5wY2uBzJhKdCiA<br>
+            r6E0n4GsWf8MQj1tVlIy<br>
+            HPxZOgDcUbNe3Rk7mFw5<br>
+            <span class="hl">Xt9sLqBzJhKd..."</span>
+          </div>
+          <div class="verified-tag">
+            <i class="bi bi-shield-check"></i>
+            AES-256-GCM · ILEGIBLE SIN CLAVE MAESTRA
+          </div>
+        </div>
+        <div class="progress-item reveal d1">
+          <div class="progress-label"><span>Fortaleza del cifrado</span><span>100%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:100%"></div>
+          </div>
+        </div>
+        <div class="progress-item reveal d2">
+          <div class="progress-label"><span>Resistencia fuerza bruta</span><span>99.9%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:99.9%"></div>
+          </div>
+        </div>
+        <div class="progress-item reveal d3">
+          <div class="progress-label"><span>Datos enviados al servidor</span><span>0%</span></div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-right reveal d1">
+        <div class="sec-items">
+          <div class="sec-row">
+            <div class="sec-row-key"><i class="bi bi-shield-fill-check"></i> AES-256-GCM</div>
+            <div class="sec-row-val">Estándar de cifrado usado por <strong>bancos, gobiernos y agencias de
+                defensa</strong>. Vault cifrado antes de salir del navegador.</div>
+          </div>
+          <div class="sec-row">
+            <div class="sec-row-key"><i class="bi bi-arrow-repeat"></i> PBKDF2</div>
+            <div class="sec-row-val">Contraseña maestra transformada con <strong>310.000 iteraciones</strong>. Fuerza
+              bruta: 2-3 intentos por segundo. Matemáticamente imposible.</div>
+          </div>
+          <div class="sec-row">
+            <div class="sec-row-key"><i class="bi bi-slash-circle-fill"></i> ZERO_KNOW</div>
+            <div class="sec-row-val">La contraseña maestra <strong>nunca se almacena</strong> en ningún lado. Ni
+              dispositivo, ni servidor. Solo existe en tu memoria.</div>
+          </div>
+          <div class="sec-row">
+            <div class="sec-row-key"><i class="bi bi-hourglass-split"></i> AUTO_LOCK</div>
+            <div class="sec-row-val">Bloqueo automático por inactividad. <strong>Tiempo personalizable</strong> de 1 a
+              120 minutos. Contador visible en tiempo real.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <div class="sec-header">
+      <div class="sec-header-num reveal">
+        <div class="sec-num">03</div>
+        <div class="sec-module">INSTALL</div>
+      </div>
+      <div class="sec-header-content reveal d1">
+        <div class="sec-label">system.install</div>
+        <h2 class="sec-title">En tu celular<br><span>en 30 segundos.</span></h2>
+        <p class="sec-desc">Sin App Store. Sin Play Store. Sin actualizaciones forzadas. PWA nativa instalable
+          directamente desde el navegador.</p>
+      </div>
+    </div>
+    <div class="install-grid">
+      <div class="install-col reveal">
+        <div class="platform-badge">
+          <i class="bi bi-android2" style="color:var(--green)"></i>
+          <div>
+            <div class="platform-name">Android</div>
+            <div class="platform-info">Chrome · Edge · Samsung Browser</div>
+          </div>
+        </div>
+        <div class="cmd-steps">
+          <div class="cmd-step">
+            <div class="cmd-step-n">01</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">open chrome obsidian.app</div>
+              <div class="cmd-step-out">Abrí <strong>Chrome</strong> y navegá a la URL de OBSIDIAN</div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">02</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">tap --menu-button</div>
+              <div class="cmd-step-out">Tocá los <strong>tres puntitos</strong> arriba a la derecha</div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">03</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">select "Agregar a pantalla de inicio"</div>
+              <div class="cmd-step-out">Seleccioná <strong>"Agregar a pantalla de inicio"</strong> y confirmá</div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">04</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">install --confirm</div>
+              <div class="cmd-step-out"><strong>[✓] OBSIDIAN instalado</strong> — ícono en pantalla de inicio</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="install-col reveal d2">
+        <div class="platform-badge">
+          <i class="bi bi-apple" style="color:var(--text2)"></i>
+          <div>
+            <div class="platform-name">iPhone</div>
+            <div class="platform-info">Safari únicamente</div>
+          </div>
+        </div>
+        <div class="cmd-steps">
+          <div class="cmd-step">
+            <div class="cmd-step-n">01</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">open safari obsidian.app</div>
+              <div class="cmd-step-out">Abrí <strong>Safari</strong> — requiere Safari, no Chrome</div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">02</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">navigate --url obsidian</div>
+              <div class="cmd-step-out">Ingresá a la <strong>URL de OBSIDIAN</strong></div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">03</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">tap --share-button</div>
+              <div class="cmd-step-out">Tocá el ícono <strong>compartir</strong> — cuadrado con flecha en la barra
+                inferior</div>
+            </div>
+          </div>
+          <div class="cmd-step">
+            <div class="cmd-step-n">04</div>
+            <div class="cmd-step-body">
+              <div class="cmd-step-cmd">select "Agregar a pantalla de inicio"</div>
+              <div class="cmd-step-out"><strong>[✓] OBSIDIAN instalado</strong> — ícono en pantalla de inicio</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials">
+    <div class="sec-header">
+      <div class="sec-header-num reveal">
+        <div class="sec-num">04</div>
+        <div class="sec-module">USERS</div>
+      </div>
+      <div class="sec-header-content reveal d1">
+        <div class="sec-label">system.users</div>
+        <h2 class="sec-title">Lo que dicen<br><span>los usuarios.</span></h2>
+      </div>
+    </div>
+    <div class="tgrid">
+      <div class="tcard reveal">
+        <div class="tcard-meta"><i class="bi bi-person-fill"></i> user_001 · verified</div>
+        <div class="tcard-rating">
+          <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i
+            class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+        </div>
+        <div class="tcard-quote">Finalmente un gestor de contraseñas que no me pide pagar para usar mis propios datos.
+          El cifrado AES-256 me da total confianza.</div>
+        <div class="tcard-author">
+          <div class="tcard-author-name">Martín R.</div>
+          <div class="tcard-author-role">developer · buenos_aires</div>
+        </div>
+      </div>
+      <div class="tcard reveal d2">
+        <div class="tcard-meta"><i class="bi bi-person-fill"></i> user_002 · verified</div>
+        <div class="tcard-rating">
+          <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i
+            class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+        </div>
+        <div class="tcard-quote">Funciona offline y se instala como app nativa. No hay diferencia con una app de la Play
+          Store. Increíble para ser una PWA.</div>
+        <div class="tcard-author">
+          <div class="tcard-author-name">Sofía L.</div>
+          <div class="tcard-author-role">designer · córdoba</div>
+        </div>
+      </div>
+      <div class="tcard reveal d3">
+        <div class="tcard-meta"><i class="bi bi-person-fill"></i> user_003 · verified</div>
+        <div class="tcard-rating">
+          <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i
+            class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+        </div>
+        <div class="tcard-quote">Las alertas de contraseñas reutilizadas me salvaron. Tenía la misma clave en 12 sitios
+          sin saberlo. Ahora todo está separado y seguro.</div>
+        <div class="tcard-author">
+          <div class="tcard-author-name">Javier M.</div>
+          <div class="tcard-author-role">accountant · rosario</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="cta">
+    <div class="cta-wrap">
+      <div class="cta-left reveal">
+        <div class="cta-sys">
+          <span>$ obsidian --init</span>
+          <span class="ok">[✓] Módulos cargados</span>
+          <span class="ok">[✓] Cifrado listo</span>
+          <span class="ok blink">[✓] Esperando usuario</span>
+        </div>
+        <h2 class="cta-title">Empezá hoy.<br><span>Es gratis.</span></h2>
+        <p class="cta-desc">Tus contraseñas protegidas con el mismo cifrado que usan los bancos. Sin registro, sin
+          tarjeta, sin servidores que lean tus datos.</p>
+        <p class="cta-note"><i class="bi bi-check-circle-fill"></i> Sin registro · Sin tarjeta · 100% gratis</p>
+      </div>
+      <div class="cta-right reveal d1">
+        <div class="cta-item">
+          <div class="cta-item-key"><i class="bi bi-shield-fill-check"></i> encryption</div>
+          <div class="cta-item-val"><strong>AES-256-GCM</strong> — cifrado bancario en tu dispositivo</div>
+        </div>
+        <div class="cta-item">
+          <div class="cta-item-key"><i class="bi bi-collection"></i> vaults</div>
+          <div class="cta-item-val"><strong>Múltiples vaults</strong> — Personal, Trabajo, Banco separados</div>
+        </div>
+        <div class="cta-item">
+          <div class="cta-item-key"><i class="bi bi-phone"></i> platform</div>
+          <div class="cta-item-val"><strong>PWA instalable</strong> — Android e iPhone sin tienda de apps</div>
+        </div>
+        <div class="cta-item">
+          <div class="cta-item-key"><i class="bi bi-wifi-off"></i> network</div>
+          <div class="cta-item-val"><strong>100% offline</strong> — tus datos nunca salen del dispositivo</div>
+        </div>
+        <div class="cta-item">
+          <div class="cta-item-key"><i class="bi bi-download"></i> backup</div>
+          <div class="cta-item-val"><strong>Backup cifrado</strong> — archivo .vault portable entre dispositivos</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">
+      <div class="footer-logo">OBSIDIAN</div>
+      <div class="footer-tagline">Password Manager<br>Cifrado por diseño<br>Gratis para siempre</div>
+    </div>
+    <div class="footer-links">
+      <a href="#features">features</a>
+      <a href="#security">security</a>
+      <a href="#install">install</a>
+      <a href="#testimonials">users</a>
+      <a href="https://obsidiansecure.netlify.app/">ir a la app</a>
+    </div>
+    <div class="footer-sys">
+      <span>© 2026 OBSIDIAN</span>
+      <span class="ok">[✓] AES-256-GCM active</span>
+      <span class="ok">[✓] Zero knowledge</span>
+      <span class="ok">[✓] Open source</span>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const t = document.querySelector(a.getAttribute('href'));
+        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+    // Cipher scroll animation
+    const cipher = document.getElementById('cipher');
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    setInterval(() => {
+      if (!cipher) return;
+      let txt = '';
+      for (let i = 0; i < 180; i++) txt += chars[Math.floor(Math.random() * chars.length)];
+      cipher.textContent = txt;
+    }, 120);
+  </script>
+</body>
+
+</html>

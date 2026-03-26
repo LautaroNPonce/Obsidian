@@ -100,9 +100,9 @@ La contraseña maestra nunca se almacena ni se transmite: solo existe en la memo
 
 ---
 
-## <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/globe.svg" width="20"/> Demo
+## <img src="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/icons/globe.svg" width="20"/> Pagina Web
 
-👉 [https://obsidianlpn.netlify.app](https://obsidiansecure.netlify.app/)
+👉 [https://obsidians-web.vercel.app/](https://obsidians-web.vercel.app/))
 
 ---
 
